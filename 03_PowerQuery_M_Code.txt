@@ -1,0 +1,71 @@
+// =============================================================================
+// STEP 1 - EXCEL POWER QUERY (Data tab > Get Data > From Text/CSV > Transform Data)
+// Source file: Sample - Superstore.csv  (the CSV has 3 tables stacked in one file:
+//   rows 1-9994  = orders, then a People table (Person/Region), then a Returns table)
+// Create 3 queries from the same CSV. For each: Home > Advanced Editor > paste the code.
+// Change the file path in each query. Load orders as "Orders", others as "People"/"Returns".
+// =============================================================================
+
+// ---------- QUERY 1: Orders (cleaning) ----------
+let
+    Source   = Csv.Document(File.Contents("C:\superstore\superstore.csv"),
+                 [Delimiter=",", Columns=21, Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+
+    // 1) Remove the stacked People/Returns rows: they have no Order Date
+    OrdersOnly = Table.SelectRows(Promoted, each [Order Date] <> null and [Order Date] <> ""),
+
+    // 2) Trim spaces in text columns
+    Trimmed = Table.TransformColumns(OrdersOnly,
+                {{"Order ID", Text.Trim}, {"Customer ID", Text.Trim}, {"Customer Name", Text.Trim},
+                 {"City", Text.Trim}, {"State", Text.Trim}, {"Product Name", Text.Trim}}),
+
+    // 3) Set correct data types (US date format in the file)
+    Typed = Table.TransformColumnTypes(Trimmed,
+                {{"Row ID", Int64.Type}, {"Order Date", type date}, {"Ship Date", type date},
+                 {"Postal Code", type text}, {"Sales", type number}, {"Quantity", Int64.Type},
+                 {"Discount", type number}, {"Profit", type number}}, "en-US"),
+
+    // 4) Fix blank Postal Codes (11 lines, all Burlington, Vermont) and keep 5 digits
+    FixPostal = Table.ReplaceValue(Typed,
+                each [Postal Code],
+                each if ([Postal Code] = null or [Postal Code] = "") and [City] = "Burlington" and [State] = "Vermont"
+                     then "05401" else Text.PadStart([Postal Code], 5, "0"),
+                Replacer.ReplaceValue, {"Postal Code"}),
+
+    // 5) Remove duplicate order lines (compare every column EXCEPT Row ID)
+    NoDups = Table.Distinct(FixPostal, List.RemoveItems(Table.ColumnNames(FixPostal), {"Row ID"}))
+in
+    NoDups
+
+
+// ---------- QUERY 2: People (Region -> Salesperson) ----------
+let
+    Source   = Csv.Document(File.Contents("C:\superstore\superstore.csv"),
+                 [Delimiter=",", Columns=21, Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+    Rows     = Table.SelectRows(Promoted, each List.Contains({"Central","East","South","West"}, [Order ID])
+                                               and ([Order Date] = null or [Order Date] = "")),
+    Keep     = Table.SelectColumns(Rows, {"Row ID", "Order ID"}),
+    Renamed  = Table.RenameColumns(Keep, {{"Row ID", "Salesperson"}, {"Order ID", "Region"}})
+in
+    Renamed
+
+
+// ---------- QUERY 3: Returns (unique returned orders) ----------
+let
+    Source   = Csv.Document(File.Contents("C:\superstore\superstore.csv"),
+                 [Delimiter=",", Columns=21, Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+    Promoted = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+    Rows     = Table.SelectRows(Promoted, each [Row ID] = "Yes"),
+    Keep     = Table.SelectColumns(Rows, {"Row ID", "Order ID"}),
+    Renamed  = Table.RenameColumns(Keep, {{"Row ID", "Returned"}}),
+    Unique   = Table.Distinct(Renamed, {"Order ID"})
+in
+    Unique
+
+// CHECK AFTER LOADING: Orders = 9,993 rows | People = 4 rows | Returns = 296 rows
+// (9,994 order lines in the source, minus 1 exact duplicate)
+// If the numbers differ, the CSV you downloaded is a different version of Superstore:
+// check the row counts in each query step (the status bar shows rows at the bottom left).
+// Then Close & Load. Add the helper columns / formulas from the workbook's Clean_Data sheet.
