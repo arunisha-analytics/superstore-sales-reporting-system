@@ -38,6 +38,7 @@ Discounts above 20% destroy profit: lines with no discount earn a 29.5% margin; 
 Regions: West earns the most profit ($108K, 14.9% margin); Central has the weakest margin (7.9%).
 Returns: 296 of 5,009 orders (5.9%) were returned.
 Recommendation: cap discounts at 20% and review pricing on Tables and Bookcases, since these two areas account for most of the profit leakage.
+
 Skills demonstrated
 Excel (Power Query, data validation, PivotTable-style summaries, SUMIFS, INDEX-MATCH, XLOOKUP, IF, charts, MIS reporting) · SQL (MySQL, joins, CTEs, window functions, views) · Power BI (data model, DAX, slicers, dashboards) · data cleaning and validation · business insight writing.
 ---
