@@ -3,7 +3,11 @@
 An end-to-end reporting pipeline on the Superstore sales dataset (9,994 order lines, 2015–2018). Raw data is cleaned in Excel Power Query, stored and analysed in MySQL, visualised in Power BI, and summarised in an Excel MIS report.
 
 **Flow:** Superstore CSV → Excel Power Query (clean) → MySQL (store and analyse) → Power BI dashboard + Excel MIS report
+![Executive Overview](dashboard-1-executive.png)
 
+![Products and Discounts](dashboard-2-products.png)
+
+![Customers and Geography](dashboard-3-customers.png)
 ## Files in this repository
 
 | File | Purpose |
